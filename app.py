@@ -238,8 +238,7 @@ class MyApp(tk.Frame):
         entries = [
             self.entry_project_id,
             self.entry_name,
-            self.entry_organisation,
-            self.entry_project_role
+            self.entry_organisation
         ]
 
         if not self.validate_entries(entries):
@@ -249,7 +248,7 @@ class MyApp(tk.Frame):
         project_id = self.entry_project_id.get()
         name = self.entry_name.get()
         organisation = self.entry_organisation.get()
-        project_role = self.entry_project_role.get()
+        project_role = self.entry_project_role.get() or None
 
         if not self.check_project_id_exists(project_id):
             self.show_message("Project ID does not exist.", success=False)
@@ -289,8 +288,7 @@ class MyApp(tk.Frame):
         entries = [
             self.entry_project_id,
             self.entry_name,
-            self.entry_organisation,
-            self.entry_contribution
+            self.entry_organisation
         ]
 
         if not self.validate_entries(entries):
@@ -300,7 +298,7 @@ class MyApp(tk.Frame):
         project_id = self.entry_project_id.get().strip()
         name = self.entry_name.get().strip()
         organisation = self.entry_organisation.get().strip()
-        contribution = self.entry_contribution.get().strip()
+        contribution = self.entry_contribution.get().strip() or None
 
         if not self.check_project_id_exists(project_id):
             self.show_message("Project ID does not exist.", success=False)
@@ -339,10 +337,7 @@ class MyApp(tk.Frame):
     def submit_research_user_info(self):
         entries = [
             self.entry_project_id,
-            self.entry_type,
-            self.entry_organisation,
-            self.entry_name,
-            self.entry_email
+            self.entry_organisation
         ]
 
         if not self.validate_entries(entries):
@@ -350,10 +345,10 @@ class MyApp(tk.Frame):
             return
 
         project_id = self.entry_project_id.get()
-        type_ = self.entry_type.get()
+        type_ = self.entry_type.get() or None
         organisation = self.entry_organisation.get()
-        name = self.entry_name.get()
-        email = self.entry_email.get()
+        name = self.entry_name.get() or None
+        email = self.entry_email.get() or None
         
         if not self.check_project_id_exists(project_id):
             self.show_message("Project ID does not exist.", success=False)
