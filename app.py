@@ -187,12 +187,12 @@ class MyApp(tk.Frame):
             self.show_message("Please fill in all fields.", success=False)
             return
 
-        project_id = self.entry_project_id.get()
-        project_title = self.entry_project_title.get()
-        start_date = self.entry_start_date.get()
-        end_date = self.entry_end_date.get()
-        project_leader = self.entry_project_leader.get()
-        organisation = self.entry_organisation.get()
+        project_id = self.entry_project_id.get().strip()
+        project_title = self.entry_project_title.get().strip()
+        start_date = self.entry_start_date.get().strip()
+        end_date = self.entry_end_date.get().strip()
+        project_leader = self.entry_project_leader.get().strip()
+        organisation = self.entry_organisation.get().strip()
 
         if not self.validate_date_format(start_date) or not self.validate_date_format(end_date):
             self.show_message("Invalid date format. Use DD/MM/YYYY.", success=False)
@@ -245,10 +245,10 @@ class MyApp(tk.Frame):
             self.show_message("Please fill in all fields.", success=False)
             return
 
-        project_id = self.entry_project_id.get()
-        name = self.entry_name.get()
-        organisation = self.entry_organisation.get()
-        project_role = self.entry_project_role.get() or None
+        project_id = self.entry_project_id.get().strip()
+        name = self.entry_name.get().strip()
+        organisation = self.entry_organisation.get().strip()
+        project_role = self.entry_project_role.get().strip() or None
 
         if not self.check_project_id_exists(project_id):
             self.show_message("Project ID does not exist.", success=False)
@@ -344,11 +344,11 @@ class MyApp(tk.Frame):
             self.show_message("Please fill in all fields.", success=False)
             return
 
-        project_id = self.entry_project_id.get()
-        type_ = self.entry_type.get() or None
-        organisation = self.entry_organisation.get()
-        name = self.entry_name.get() or None
-        email = self.entry_email.get() or None
+        project_id = self.entry_project_id.get().strip()
+        type_ = self.entry_type.get().strip() or None
+        organisation = self.entry_organisation.get().strip()
+        name = self.entry_name.get().strip() or None
+        email = self.entry_email.get().strip() or None
         
         if not self.check_project_id_exists(project_id):
             self.show_message("Project ID does not exist.", success=False)
