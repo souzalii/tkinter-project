@@ -412,7 +412,12 @@ class MyApp(tk.Frame):
         )
         self.bt_search.grid(column=2, row=1, padx=5, pady=10)
 
-        self.output_text = tk.Text(self.page_content, height=10, width=80)
+        
+        self.export_button = tk.Button(self.page_content, text='Export to Excel', state=tk.DISABLED, command=self.export_to_excel)
+        self.export_button.grid(row=1, column=3, pady=10)
+
+
+        self.output_text = tk.Text(self.page_content, height=10, width=100)
         self.output_text.grid(row=2, column=0, columnspan=3, padx=5, pady=10)
 
     def search_data(self):
@@ -431,8 +436,14 @@ class MyApp(tk.Frame):
         try:
             self.db_cursor.execute(query, (project_id,))
             rows = self.db_cursor.fetchall()
-            columns = [desc[0] for desc in self.db_cursor.description]
 
+            if not rows:
+                self.output_text.delete(1.0, tk.END)
+                self.show_message("No results found.", success=False)
+                self.export_button.config(state=tk.DISABLED)
+                return
+
+            columns = [desc[0] for desc in self.db_cursor.description]
             df = pd.DataFrame(rows, columns=columns)
 
             # Clear previous output
@@ -441,16 +452,39 @@ class MyApp(tk.Frame):
             # Display output on the screen
             self.output_text.insert(tk.END, df.to_string(index=False))
 
-            # Export to Excel
-            file_name = f"{project_id}_{selected_table}.xlsx"
-            df.to_excel(file_name, index=False)
-            self.show_message(f"Data exported to {file_name} successfully!")
+            self.export_button.config(state=tk.NORMAL)
+
         except Exception as e:
             self.show_message(f"Error: {e}", success=False)
 
+
+
+
+    def export_to_excel(self):
+        project_id = self.entry_project_id.get().strip()
+        selected_table = self.dropdown_table.get()
+
+        query = sql.SQL("SELECT * FROM {} WHERE project_id = %s").format(sql.Identifier(selected_table))
+
+        try:
+            self.db_cursor.execute(query, (project_id,))
+            rows = self.db_cursor.fetchall()
+
+            columns = [desc[0] for desc in self.db_cursor.description]
+            df = pd.DataFrame(rows, columns=columns)
+
+            file_name = f"{project_id}_{selected_table}.xlsx"
+            df.to_excel(file_name, index=False)
+            self.show_message(f"Data exported to {file_name} successfully!")
+
+
+        except Exception as e:
+            self.show_message(f"Error: {e}", success=False)
+
+
 if __name__ == "__main__":
     root = tk.Tk()
-    root.geometry("800x600")
+    #root.geometry("800x600")
     app = MyApp(root)
     app.mainloop()
 
