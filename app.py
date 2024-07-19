@@ -147,7 +147,7 @@ class MyApp(tk.Frame):
         label = tk.Label(self.page_content, text=text, background=self.colourBackWhite, font=('Ariel', 12))
         label.grid(row=row, column=column, sticky=tk.W, padx=5, pady=5)
         dropdown = ttk.Combobox(self.page_content, values=options, state='readonly')
-        dropdown.grid(row=row, column=column + 1, padx=5, pady=5,sticky=tk.W) 
+        dropdown.grid(row=row, column=column + 1, padx=5, pady=5, sticky=tk.W)
         dropdown.current(0)  # Set the default selection
         return dropdown
 
@@ -159,7 +159,7 @@ class MyApp(tk.Frame):
 
     def validate_date_format(self, date_text):
         try:
-            datetime.strptime(date_text, '%Y-%m-%d')
+            datetime.strptime(date_text, '%d/%m/%Y')
             return True
         except ValueError:
             return False
@@ -195,7 +195,7 @@ class MyApp(tk.Frame):
         organisation = self.entry_organisation.get()
 
         if not self.validate_date_format(start_date) or not self.validate_date_format(end_date):
-            self.show_message("Invalid date format. Use YYYY-MM-DD.", success=False)
+            self.show_message("Invalid date format. Use DD/MM/YYYY.", success=False)
             return
 
         if self.check_project_id_exists(project_id):
@@ -218,8 +218,8 @@ class MyApp(tk.Frame):
         self.title.config(text='Project Information')
         self.entry_project_id = self.create_label_entry('Project ID: ', 0, 0)
         self.entry_project_title = self.create_label_entry('Project Title: ', 2, 0)
-        self.entry_start_date = self.create_label_entry('Start Date: ', 0, 1)
-        self.entry_end_date = self.create_label_entry('End Date: ', 2, 1)
+        self.entry_start_date = self.create_label_entry('Start Date (DD/MM/YYYY): ', 0, 1)
+        self.entry_end_date = self.create_label_entry('End Date (DD/MM/YYYY): ', 2, 1)
         self.entry_project_leader = self.create_label_entry('Project Leader: ', 0, 2)
         self.entry_organisation = self.create_label_entry('Organisation: ', 2, 2)
         self.bt_submit = tk.Button(
@@ -231,24 +231,6 @@ class MyApp(tk.Frame):
             font=('Ariel', 12),
             text='Submit',
             command=self.submit_project_info
-        )
-        self.bt_submit.grid(column=3, row=3, padx=5, pady=10)
-
-    def page2(self):
-        self.title.config(text='Project Researchers')
-        self.entry_project_id = self.create_label_entry('Project ID: ', 0, 0)
-        self.entry_name = self.create_label_entry('Name: ', 2, 0)
-        self.entry_organisation = self.create_label_entry('Organisation: ', 0, 1)
-        self.entry_project_role = self.create_label_entry('Project Role: ', 2, 1)
-        self.bt_submit = tk.Button(
-            self.page_content,
-            background=self.colourGreen1,
-            foreground=self.colourBackWhite,
-            activebackground=self.colourGreen2,
-            activeforeground=self.colourBackWhite,
-            font=('Ariel', 12),
-            text='Submit',
-            command=self.submit_researcher_info
         )
         self.bt_submit.grid(column=3, row=3, padx=5, pady=10)
 
@@ -285,13 +267,12 @@ class MyApp(tk.Frame):
         except Exception as e:
             self.show_message(f"Error: {e}", success=False)
 
-    def page3(self):
-        self.title.config(text='Project Co-Contributer')
+    def page2(self):
+        self.title.config(text='Researcher Information')
         self.entry_project_id = self.create_label_entry('Project ID: ', 0, 0)
         self.entry_name = self.create_label_entry('Name: ', 2, 0)
         self.entry_organisation = self.create_label_entry('Organisation: ', 0, 1)
-        self.entry_contribution = self.create_label_entry('Contribution: ', 2, 1)
-        self.entry_project_role = self.create_label_entry('Project Role: ', 0, 2)
+        self.entry_project_role = self.create_label_entry('Project Role: ', 2, 1)
         self.bt_submit = tk.Button(
             self.page_content,
             background=self.colourGreen1,
@@ -300,7 +281,7 @@ class MyApp(tk.Frame):
             activeforeground=self.colourBackWhite,
             font=('Ariel', 12),
             text='Submit',
-            command=self.submit_co_contributor_info
+            command=self.submit_researcher_info
         )
         self.bt_submit.grid(column=3, row=3, padx=5, pady=10)
 
@@ -309,8 +290,7 @@ class MyApp(tk.Frame):
             self.entry_project_id,
             self.entry_name,
             self.entry_organisation,
-            self.entry_contribution,
-            self.entry_project_role
+            self.entry_contribution
         ]
 
         if not self.validate_entries(entries):
@@ -321,31 +301,29 @@ class MyApp(tk.Frame):
         name = self.entry_name.get().strip()
         organisation = self.entry_organisation.get().strip()
         contribution = self.entry_contribution.get().strip()
-        project_role = self.entry_project_role.get().strip()
 
         if not self.check_project_id_exists(project_id):
             self.show_message("Project ID does not exist.", success=False)
             return
 
         insert_query = """
-        INSERT INTO co_contributors (project_id, name, organisation, contribution, project_role)
-        VALUES (%s, %s, %s, %s, %s)
+        INSERT INTO co_contributors (project_id, name, organisation, contribution)
+        VALUES (%s, %s, %s, %s)
         """
         try:
-            self.db_cursor.execute(insert_query, (project_id, name, organisation, contribution, project_role))
+            self.db_cursor.execute(insert_query, (project_id, name, organisation, contribution))
             self.db_connection.commit()
             self.clear_entries()
             self.show_message("Co-contributor information submitted successfully!")
         except Exception as e:
             self.show_message(f"Error: {e}", success=False)
 
-    def page4(self):
-        self.title.config(text='Project User')
+    def page3(self):
+        self.title.config(text='Project Co-Contributer')
         self.entry_project_id = self.create_label_entry('Project ID: ', 0, 0)
-        self.entry_type = self.create_label_entry('Type: ', 2, 0)
+        self.entry_name = self.create_label_entry('Name: ', 2, 0)
         self.entry_organisation = self.create_label_entry('Organisation: ', 0, 1)
-        self.entry_name = self.create_label_entry('Name: ', 2, 1)
-        self.entry_email = self.create_label_entry('Email: ', 0, 2)
+        self.entry_contribution = self.create_label_entry('Contribution: ', 2, 1)
         self.bt_submit = tk.Button(
             self.page_content,
             background=self.colourGreen1,
@@ -354,7 +332,7 @@ class MyApp(tk.Frame):
             activeforeground=self.colourBackWhite,
             font=('Ariel', 12),
             text='Submit',
-            command=self.submit_research_user_info
+            command=self.submit_co_contributor_info
         )
         self.bt_submit.grid(column=3, row=3, padx=5, pady=10)
 
@@ -392,6 +370,28 @@ class MyApp(tk.Frame):
             self.show_message("Research user information submitted successfully!")
         except Exception as e:
             self.show_message(f"Error: {e}", success=False)
+    
+
+    def page4(self):
+        self.title.config(text='Project User')
+        self.entry_project_id = self.create_label_entry('Project ID: ', 0, 0)
+        self.entry_type = self.create_label_entry('Type: ', 2, 0)
+        self.entry_organisation = self.create_label_entry('Organisation: ', 0, 1)
+        self.entry_name = self.create_label_entry('Name: ', 2, 1)
+        self.entry_email = self.create_label_entry('Email: ', 0, 2)
+        self.bt_submit = tk.Button(
+            self.page_content,
+            background=self.colourGreen1,
+            foreground=self.colourBackWhite,
+            activebackground=self.colourGreen2,
+            activeforeground=self.colourBackWhite,
+            font=('Ariel', 12),
+            text='Submit',
+            command=self.submit_research_user_info
+        )
+        self.bt_submit.grid(column=3, row=3, padx=5, pady=10)
+
+
 
     def page5(self):
         self.title.config(text='Search')
