@@ -140,12 +140,14 @@ class MyApp(tk.Frame):
         label = tk.Label(self.page_content, text=text, background=self.colourBackWhite, font=('Ariel', 12))
         label.grid(row=row, column=column, sticky=tk.W, padx=5, pady=5)
         entry = tk.Entry(self.page_content, font=('Ariel', 12))
-        entry.grid(row=row, column=column + 1, padx=5, pady=5)
+        entry.grid(row=row, column=column + 1, padx=5, pady=5, sticky=tk.W)
         return entry
 
-    def create_dropdown(self, options, column, row):
+    def create_dropdown(self, text, options, column, row):
+        label = tk.Label(self.page_content, text=text, background=self.colourBackWhite, font=('Ariel', 12))
+        label.grid(row=row, column=column, sticky=tk.W, padx=5, pady=5)
         dropdown = ttk.Combobox(self.page_content, values=options, state='readonly')
-        dropdown.grid(row=row, column=column + 1, padx=5, pady=5)
+        dropdown.grid(row=row, column=column + 1, padx=5, pady=5,sticky=tk.W) 
         dropdown.current(0)  # Set the default selection
         return dropdown
 
@@ -394,12 +396,10 @@ class MyApp(tk.Frame):
 
     def page5(self):
         self.title.config(text='Search')
+
         self.entry_project_id = self.create_label_entry('Project ID: ', 0, 0)
-        self.dropdown_table = self.create_dropdown(
-            ['projects', 'researchers', 'co_contributors', 'research_users'],
-            0,
-            1
-        )
+        self.dropdown_table = self.create_dropdown('Select table',['projects', 'researchers', 'co_contributors', 'research_users'], 0, 1)
+
         self.bt_search = tk.Button(
             self.page_content,
             background=self.colourGreen1,
@@ -410,15 +410,13 @@ class MyApp(tk.Frame):
             text='Search',
             command=self.search_data
         )
-        self.bt_search.grid(column=2, row=1, padx=5, pady=10)
-
+        self.bt_search.grid(column=0, row=2, padx=5, pady=10)
         
         self.export_button = tk.Button(self.page_content, text='Export to Excel', state=tk.DISABLED, command=self.export_to_excel)
-        self.export_button.grid(row=1, column=3, pady=10)
-
+        self.export_button.grid(row=2, column=1, pady=10)
 
         self.output_text = tk.Text(self.page_content, height=10, width=100)
-        self.output_text.grid(row=2, column=0, columnspan=3, padx=5, pady=10)
+        self.output_text.grid(row=3, column=0, columnspan=3, padx=5, pady=10)
 
     def search_data(self):
         project_id = self.entry_project_id.get().strip()
