@@ -7,7 +7,7 @@ from datetime import datetime
 
 class MyApp(tk.Frame):
     def __init__(self, root):
-        self.current_page_index = 0
+        self.current_page_index = 4
         self.pages = [self.page1, self.page2, self.page3, self.page4, self.page5]
 
         self.colourTitle = '#666666'
@@ -168,7 +168,6 @@ class MyApp(tk.Frame):
         try:
             self.db_cursor.execute("SELECT 1 FROM projects WHERE project_id = %s", (project_id,))
             result = self.db_cursor.fetchone()
-            print(f"Check project ID exists: {result}")  # Log para depuração
             return result is not None
         except Exception as e:
             print(f"Error checking project ID: {e}")  # Log para erros
