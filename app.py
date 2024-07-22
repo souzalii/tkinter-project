@@ -5,7 +5,7 @@ import psycopg2
 from psycopg2 import sql
 from datetime import datetime
 
-class MyApp(tk.Frame):
+class MyProjects(tk.Frame):
     def __init__(self, root):
         super().__init__(root, bg='#fff')
         
@@ -540,6 +540,6 @@ class MyApp(tk.Frame):
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = MyApp(root)    
+    app = MyProjects(root)    
     root.geometry("960x600")
     app.mainloop()
