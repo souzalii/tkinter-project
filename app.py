@@ -9,14 +9,17 @@ class MyApp(tk.Frame):
     def __init__(self, root):
         super().__init__(root, bg='#fff')
         
-        self.current_page_index = 4
+        self.current_page_index = 4 # Index of the current page
         self.pages = [self.page1, self.page2, self.page3, self.page4, self.page5]
 
+        #Color settings for the UI
         self.colourTitle = '#666666'
         self.colourGreen1 = '#00A685'
         self.colourGreen2 = '#009977'
         self.colourBackGrey = '#eeeeee'
         self.colourBackWhite = '#fff'
+
+        # Main frame configuration
         self.main_frame = self
         self.main_frame.pack(fill=tk.BOTH, expand=True)
         self.main_frame.columnconfigure(0, weight=1)
@@ -29,6 +32,7 @@ class MyApp(tk.Frame):
         self.load_main_widgets()
         self.update_button_state()
 
+        # Database connection setup
         self.db_connection = psycopg2.connect(
             host="localhost",
             database="postgres",
@@ -37,6 +41,7 @@ class MyApp(tk.Frame):
         )
         self.db_cursor = self.db_connection.cursor()
 
+    #function to create buttons
     def create_button(self, text, column, row, command, local=None):
         if local is None:
             local = self.pager
@@ -60,15 +65,18 @@ class MyApp(tk.Frame):
         
         return button
 
+    #Clear all widgets in a frame
     def clear_frame(self, frame):
         for child in frame.winfo_children():
             child.destroy()
 
+    #Clear all entry fields
     def clear_entries(self):
         for child in self.page_content.winfo_children():
             if isinstance(child, tk.Entry):
                 child.delete(0, tk.END)
 
+    #Messages display
     def show_message(self, message, success=True):
         color = self.colourGreen1 if success else 'red'
         if hasattr(self, 'message_label'):
@@ -76,6 +84,7 @@ class MyApp(tk.Frame):
         self.message_label = tk.Label(self.page_content, text=message, background=self.colourBackWhite, foreground=color, font=('Ariel', 12))
         self.message_label.grid(row=0, column=0, columnspan=4, pady=10)
 
+    #Func to change pages
     def change_page(self, button):
         page_map = {
             'Project-Info': 0,
@@ -102,6 +111,7 @@ class MyApp(tk.Frame):
         self.create_page_content()
         self.pages[self.current_page_index]()
 
+    #Create the header frame and navigation buttons
     def create_header(self):
         self.pager = tk.Frame(self.main_frame, background=self.colourBackGrey)
         self.pager.grid(column=0, row=0, sticky=tk.NSEW)
@@ -125,6 +135,7 @@ class MyApp(tk.Frame):
 
         self.bt_project.config(state=tk.DISABLED)
 
+    #Create struct and elements of the pages
     def create_page_title(self):
         self.page_container = tk.Frame(self.main_frame, background=self.colourGreen1, height=2)
         self.page_container.columnconfigure(0, weight=1)
@@ -160,6 +171,7 @@ class MyApp(tk.Frame):
         dropdown.current(0)  # Set the default selection
         return dropdown
 
+    #Validate information 
     def validate_entries(self, entries):
         return all(entry.get().strip() for entry in entries)
 
@@ -220,6 +232,7 @@ class MyApp(tk.Frame):
         except Exception as e:
             self.show_message(f"Error: {e}", success=False)
 
+    #Submit information
     def submit_researcher_info(self):
         entries = [
             self.entry_project_id,
@@ -316,6 +329,7 @@ class MyApp(tk.Frame):
         except Exception as e:
             self.show_message(f"Error: {e}", success=False)
 
+
     def upload_excel(self, table_name):
         file_path = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx;*.xls")])
         if not file_path:
@@ -327,20 +341,42 @@ class MyApp(tk.Frame):
             self.show_message(f"Error reading file: {e}", success=False)
             return
 
+        # Define and check number of columns
+        column_counts = {
+            'projects': 6,
+            'researchers': 4,
+            'co_contributors': 4,
+            'research_users': 5
+        }
+        if len(df.columns) != column_counts.get(table_name, 0):
+            self.show_message(f"Error: The file does not have the correct number of columns for {table_name}.", success=False)
+            return
+
         for column in df.columns:
             df[column] = df[column].astype(str).str.strip()
 
-        try:
-            for _, row in df.iterrows():
-                columns = ', '.join(row.index)
-                values = ', '.join(['%s'] * len(row))
-                insert_query = f"INSERT INTO {table_name} ({columns}) VALUES ({values})"
+        errors = []
+
+        for index, row in df.iterrows():
+            columns = ', '.join(row.index)
+            values = ', '.join(['%s'] * len(row))
+            insert_query = f"INSERT INTO {table_name} ({columns}) VALUES ({values})"
+            
+            try:
                 self.db_cursor.execute(insert_query, tuple(row))
-            self.db_connection.commit()
+            except Exception as e:
+                errors.append((index + 1, str(e)))  # +1 for 1-based line numbers
+            finally:
+                self.db_connection.commit()
+
+        if errors:
+            error_messages = '\n'.join([f"Line {line}: {error}" for line, error in errors])
+            self.show_message(f"Errors encountered:\n{error_messages}", success=False)
+        else:
             self.show_message(f"{table_name.capitalize()} information submitted successfully!")
-        except Exception as e:
-            self.show_message(f"Error: {e}", success=False)
+
     
+    #Search and export functionality 
     def search_data(self):
         if hasattr(self, 'message_label'):
             self.message_label.destroy()
@@ -409,6 +445,7 @@ class MyApp(tk.Frame):
         except Exception as e:
             self.show_message(f"Error: {e}", success=False)
 
+    #Content of pages
     def page1(self):
         self.title.config(text='Project Information')
 
@@ -486,6 +523,5 @@ class MyApp(tk.Frame):
 
 if __name__ == "__main__":
     root = tk.Tk()
-    #root.geometry("800x600")
     app = MyApp(root)
     app.mainloop()
