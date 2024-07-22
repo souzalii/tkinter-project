@@ -36,8 +36,8 @@ class MyProjects(tk.Frame):
         self.db_connection = psycopg2.connect(
             host="localhost",
             database="postgres",
-            user="postgres",
-            password="UWA2024"
+            user=<YOUR_USER_NAME>,
+            password=<YOUR_PASSWORD>
         )
         self.db_cursor = self.db_connection.cursor()
 
