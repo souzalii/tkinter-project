@@ -342,20 +342,33 @@ class MyApp(tk.Frame):
             self.show_message(f"Error: {e}", success=False)
     
     def search_data(self):
+        if hasattr(self, 'message_label'):
+            self.message_label.destroy()
+        
         project_id = self.entry_project_id.get().strip()
         selected_table = self.dropdown_table.get()
-
-        if not project_id or not selected_table:
-            self.show_message("Please fill in all fields.", success=False)
+        
+        if not selected_table:
+            self.show_message("Please select a table.", success=False)
             return
 
-        if not self.check_project_id_exists(project_id):
-            self.show_message("Project ID does not exist.", success=False)
-            return
+        if project_id.lower() == "all" or project_id == "*":
+            query = sql.SQL("SELECT * FROM {}").format(sql.Identifier(selected_table))
+            params = ()
+        else:
+            if not project_id:
+                self.show_message("Please fill in the Project ID.", success=False)
+                return
+            
+            if not self.check_project_id_exists(project_id):
+                self.show_message("Project ID does not exist.", success=False)
+                return
+            
+            query = sql.SQL("SELECT * FROM {} WHERE project_id = %s").format(sql.Identifier(selected_table))
+            params = (project_id,)
 
-        query = sql.SQL("SELECT * FROM {} WHERE project_id = %s").format(sql.Identifier(selected_table))
         try:
-            self.db_cursor.execute(query, (project_id,))
+            self.db_cursor.execute(query, params)
             rows = self.db_cursor.fetchall()
 
             if not rows:
@@ -367,10 +380,7 @@ class MyApp(tk.Frame):
             columns = [desc[0] for desc in self.db_cursor.description]
             df = pd.DataFrame(rows, columns=columns)
 
-            # Clear previous output
             self.output_text.delete(1.0, tk.END)
-
-            # Display output on the screen
             self.output_text.insert(tk.END, df.to_string(index=False))
 
             self.export_button.config(state=tk.NORMAL)
@@ -456,16 +466,23 @@ class MyApp(tk.Frame):
 
     def page5(self):
         self.title.config(text='Search')
+      
+        self.app_text_2 = self.create_text('Enter the project ID and select the table you want to query. If you want all the values ​​in the table, type "all" and select the table.', 0, 4) 
 
-        self.entry_project_id = self.create_label_entry('Project ID: ', 0, 0)
-        self.dropdown_table = self.create_dropdown('Select table',['projects', 'researchers', 'co_contributors', 'research_users'], 0, 1)
+        self.entry_project_id = self.create_label_entry('Project ID: ', 0, 5)
+        self.dropdown_table = self.create_dropdown('Select table',['projects', 'researchers', 'co_contributors', 'research_users'], 0, 10)
 
-        self.bt_search = self.create_button('Search', 0,2,self.search_data,'page_content')
-        self.export_button = self.create_button('Export to Excel', 1,2,self.export_to_excel,'page_content')
+        self.bt_search = self.create_button('Search', 0,15,self.search_data,'page_content')
+        self.export_button = self.create_button('Export to Excel', 1,15,self.export_to_excel,'page_content')
         self.export_button.config(state=tk.DISABLED)
 
-        self.output_text = tk.Text(self.page_content, height=10, width=100)
-        self.output_text.grid(row=3, column=0, columnspan=3, padx=5, pady=10)
+        scrollbar = tk.Scrollbar(self.page_content)
+        scrollbar.grid(row=20, column=3, sticky='ns', padx=(0, 10), pady=10)
+
+        self.output_text = tk.Text(self.page_content, height=10, width=100, yscrollcommand=scrollbar.set)
+        self.output_text.grid(row=20, column=0, columnspan=3, padx=5, pady=10)
+
+        scrollbar.config(command=self.output_text.yview)
 
 if __name__ == "__main__":
     root = tk.Tk()
