@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
 import pandas as pd
 import psycopg2
 from psycopg2 import sql
@@ -7,6 +7,8 @@ from datetime import datetime
 
 class MyApp(tk.Frame):
     def __init__(self, root):
+        super().__init__(root, bg='#fff')
+        
         self.current_page_index = 4
         self.pages = [self.page1, self.page2, self.page3, self.page4, self.page5]
 
@@ -15,8 +17,6 @@ class MyApp(tk.Frame):
         self.colourGreen2 = '#009977'
         self.colourBackGrey = '#eeeeee'
         self.colourBackWhite = '#fff'
-
-        super().__init__(root, bg=self.colourBackWhite)
         self.main_frame = self
         self.main_frame.pack(fill=tk.BOTH, expand=True)
         self.main_frame.columnconfigure(0, weight=1)
@@ -37,9 +37,12 @@ class MyApp(tk.Frame):
         )
         self.db_cursor = self.db_connection.cursor()
 
-    def create_button(self, text, column, row, command_arg, local=None):
+    def create_button(self, text, column, row, command, local=None):
         if local is None:
             local = self.pager
+        elif local == "page_content":
+            local = self.page_content
+        
         button = tk.Button(
             local,
             background=self.colourGreen1,
@@ -51,7 +54,7 @@ class MyApp(tk.Frame):
             relief=tk.FLAT,
             font=('Ariel', 12),
             text=text,
-            command=lambda: self.change_page(command_arg)
+            command=command
         )
         button.grid(column=column, row=row, padx=5, pady=10)
         
@@ -71,7 +74,7 @@ class MyApp(tk.Frame):
         if hasattr(self, 'message_label'):
             self.message_label.destroy()
         self.message_label = tk.Label(self.page_content, text=message, background=self.colourBackWhite, foreground=color, font=('Ariel', 12))
-        self.message_label.grid(row=5, column=0, columnspan=4, pady=10)
+        self.message_label.grid(row=0, column=0, columnspan=4, pady=10)
 
     def change_page(self, button):
         page_map = {
@@ -106,11 +109,11 @@ class MyApp(tk.Frame):
         self.app_title = tk.Label(self.pager, background=self.colourBackGrey, foreground=self.colourGreen2, font=('Ariel', 18), text='Nesp Projects')
         self.app_title.grid(column=0, row=0, sticky=tk.NSEW, padx=30, pady=10)
 
-        self.bt_project = self.create_button('Project Information', 2, 0, 'Project-Info')
-        self.bt_researcher = self.create_button('Project Researchers', 3, 0, 'Researcher-Info')
-        self.bt_cocontributer = self.create_button('Project Co-Contributer', 4, 0, 'Researcher-Contributer')
-        self.bt_users = self.create_button('Project User', 5, 0, 'Researcher-User')
-        self.bt_search = self.create_button('Search', 0, 1, 'Search')
+        self.bt_project = self.create_button('Project Information', 2, 0, lambda: self.change_page('Project-Info'))
+        self.bt_researcher = self.create_button('Project Researchers', 3, 0, lambda: self.change_page('Researcher-Info'))
+        self.bt_cocontributer = self.create_button('Project Co-Contributer', 4, 0, lambda: self.change_page('Researcher-Contributer'))
+        self.bt_users = self.create_button('Project User', 5, 0, lambda: self.change_page('Researcher-User'))
+        self.bt_search = self.create_button('Search', 0, 1, lambda: self.change_page('Search'))
 
         self.button_dict = {
             0: self.bt_project,
@@ -143,6 +146,12 @@ class MyApp(tk.Frame):
         entry.grid(row=row, column=column + 1, padx=5, pady=5, sticky=tk.W)
         return entry
 
+    def create_text(self, text, column, row, columnspan=None): 
+        if columnspan is None:
+            columnspan = 2
+        label = tk.Label(self.page_content, text=text, background=self.colourBackWhite, font=('Ariel', 12))
+        label.grid(row=row, column=column, padx=5, pady=5,columnspan=columnspan,sticky=tk.EW)
+
     def create_dropdown(self, text, options, column, row):
         label = tk.Label(self.page_content, text=text, background=self.colourBackWhite, font=('Ariel', 12))
         label.grid(row=row, column=column, sticky=tk.W, padx=5, pady=5)
@@ -152,10 +161,7 @@ class MyApp(tk.Frame):
         return dropdown
 
     def validate_entries(self, entries):
-        for entry in entries:
-            if not entry.get().strip():
-                return False
-        return True
+        return all(entry.get().strip() for entry in entries)
 
     def validate_date_format(self, date_text):
         try:
@@ -214,26 +220,6 @@ class MyApp(tk.Frame):
         except Exception as e:
             self.show_message(f"Error: {e}", success=False)
 
-    def page1(self):
-        self.title.config(text='Project Information')
-        self.entry_project_id = self.create_label_entry('Project ID: ', 0, 0)
-        self.entry_project_title = self.create_label_entry('Project Title: ', 2, 0)
-        self.entry_start_date = self.create_label_entry('Start Date (DD/MM/YYYY): ', 0, 1)
-        self.entry_end_date = self.create_label_entry('End Date (DD/MM/YYYY): ', 2, 1)
-        self.entry_project_leader = self.create_label_entry('Project Leader: ', 0, 2)
-        self.entry_organisation = self.create_label_entry('Organisation: ', 2, 2)
-        self.bt_submit = tk.Button(
-            self.page_content,
-            background=self.colourGreen1,
-            foreground=self.colourBackWhite,
-            activebackground=self.colourGreen2,
-            activeforeground=self.colourBackWhite,
-            font=('Ariel', 12),
-            text='Submit',
-            command=self.submit_project_info
-        )
-        self.bt_submit.grid(column=3, row=3, padx=5, pady=10)
-
     def submit_researcher_info(self):
         entries = [
             self.entry_project_id,
@@ -253,7 +239,7 @@ class MyApp(tk.Frame):
         if not self.check_project_id_exists(project_id):
             self.show_message("Project ID does not exist.", success=False)
             return
-            
+
         insert_query = """
         INSERT INTO researchers (project_id, name, organisation, project_role)
         VALUES (%s, %s, %s, %s)
@@ -265,24 +251,6 @@ class MyApp(tk.Frame):
             self.show_message("Researcher information submitted successfully!")
         except Exception as e:
             self.show_message(f"Error: {e}", success=False)
-
-    def page2(self):
-        self.title.config(text='Researcher Information')
-        self.entry_project_id = self.create_label_entry('Project ID: ', 0, 0)
-        self.entry_name = self.create_label_entry('Name: ', 2, 0)
-        self.entry_organisation = self.create_label_entry('Organisation: ', 0, 1)
-        self.entry_project_role = self.create_label_entry('Project Role: ', 2, 1)
-        self.bt_submit = tk.Button(
-            self.page_content,
-            background=self.colourGreen1,
-            foreground=self.colourBackWhite,
-            activebackground=self.colourGreen2,
-            activeforeground=self.colourBackWhite,
-            font=('Ariel', 12),
-            text='Submit',
-            command=self.submit_researcher_info
-        )
-        self.bt_submit.grid(column=3, row=3, padx=5, pady=10)
 
     def submit_co_contributor_info(self):
         entries = [
@@ -316,24 +284,6 @@ class MyApp(tk.Frame):
         except Exception as e:
             self.show_message(f"Error: {e}", success=False)
 
-    def page3(self):
-        self.title.config(text='Project Co-Contributer')
-        self.entry_project_id = self.create_label_entry('Project ID: ', 0, 0)
-        self.entry_name = self.create_label_entry('Name: ', 2, 0)
-        self.entry_organisation = self.create_label_entry('Organisation: ', 0, 1)
-        self.entry_contribution = self.create_label_entry('Contribution: ', 2, 1)
-        self.bt_submit = tk.Button(
-            self.page_content,
-            background=self.colourGreen1,
-            foreground=self.colourBackWhite,
-            activebackground=self.colourGreen2,
-            activeforeground=self.colourBackWhite,
-            font=('Ariel', 12),
-            text='Submit',
-            command=self.submit_co_contributor_info
-        )
-        self.bt_submit.grid(column=3, row=3, padx=5, pady=10)
-
     def submit_research_user_info(self):
         entries = [
             self.entry_project_id,
@@ -349,7 +299,7 @@ class MyApp(tk.Frame):
         organisation = self.entry_organisation.get().strip()
         name = self.entry_name.get().strip() or None
         email = self.entry_email.get().strip() or None
-        
+
         if not self.check_project_id_exists(project_id):
             self.show_message("Project ID does not exist.", success=False)
             return
@@ -365,53 +315,32 @@ class MyApp(tk.Frame):
             self.show_message("Research user information submitted successfully!")
         except Exception as e:
             self.show_message(f"Error: {e}", success=False)
+
+    def upload_excel(self, table_name):
+        file_path = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx;*.xls")])
+        if not file_path:
+            return
+
+        try:
+            df = pd.read_excel(file_path)
+        except Exception as e:
+            self.show_message(f"Error reading file: {e}", success=False)
+            return
+
+        for column in df.columns:
+            df[column] = df[column].astype(str).str.strip()
+
+        try:
+            for _, row in df.iterrows():
+                columns = ', '.join(row.index)
+                values = ', '.join(['%s'] * len(row))
+                insert_query = f"INSERT INTO {table_name} ({columns}) VALUES ({values})"
+                self.db_cursor.execute(insert_query, tuple(row))
+            self.db_connection.commit()
+            self.show_message(f"{table_name.capitalize()} information submitted successfully!")
+        except Exception as e:
+            self.show_message(f"Error: {e}", success=False)
     
-
-    def page4(self):
-        self.title.config(text='Project User')
-        self.entry_project_id = self.create_label_entry('Project ID: ', 0, 0)
-        self.entry_type = self.create_label_entry('Type: ', 2, 0)
-        self.entry_organisation = self.create_label_entry('Organisation: ', 0, 1)
-        self.entry_name = self.create_label_entry('Name: ', 2, 1)
-        self.entry_email = self.create_label_entry('Email: ', 0, 2)
-        self.bt_submit = tk.Button(
-            self.page_content,
-            background=self.colourGreen1,
-            foreground=self.colourBackWhite,
-            activebackground=self.colourGreen2,
-            activeforeground=self.colourBackWhite,
-            font=('Ariel', 12),
-            text='Submit',
-            command=self.submit_research_user_info
-        )
-        self.bt_submit.grid(column=3, row=3, padx=5, pady=10)
-
-
-
-    def page5(self):
-        self.title.config(text='Search')
-
-        self.entry_project_id = self.create_label_entry('Project ID: ', 0, 0)
-        self.dropdown_table = self.create_dropdown('Select table',['projects', 'researchers', 'co_contributors', 'research_users'], 0, 1)
-
-        self.bt_search = tk.Button(
-            self.page_content,
-            background=self.colourGreen1,
-            foreground=self.colourBackWhite,
-            activebackground=self.colourGreen2,
-            activeforeground=self.colourBackWhite,
-            font=('Ariel', 12),
-            text='Search',
-            command=self.search_data
-        )
-        self.bt_search.grid(column=0, row=2, padx=5, pady=10)
-        
-        self.export_button = tk.Button(self.page_content, text='Export to Excel', state=tk.DISABLED, command=self.export_to_excel)
-        self.export_button.grid(row=2, column=1, pady=10)
-
-        self.output_text = tk.Text(self.page_content, height=10, width=100)
-        self.output_text.grid(row=3, column=0, columnspan=3, padx=5, pady=10)
-
     def search_data(self):
         project_id = self.entry_project_id.get().strip()
         selected_table = self.dropdown_table.get()
@@ -449,9 +378,6 @@ class MyApp(tk.Frame):
         except Exception as e:
             self.show_message(f"Error: {e}", success=False)
 
-
-
-
     def export_to_excel(self):
         project_id = self.entry_project_id.get().strip()
         selected_table = self.dropdown_table.get()
@@ -473,10 +399,76 @@ class MyApp(tk.Frame):
         except Exception as e:
             self.show_message(f"Error: {e}", success=False)
 
+    def page1(self):
+        self.title.config(text='Project Information')
+
+        self.app_text_2 = self.create_text('Fill in the fields to include the information or provide a file. The file must have 6 columns in the same order as the form.', 0, 5)       
+
+        self.entry_project_id = self.create_label_entry('Project ID: ', 0, 20)
+        self.entry_project_title = self.create_label_entry('Project Title: ', 0, 21)
+        self.entry_start_date = self.create_label_entry('Start Date (DD/MM/YYYY): ', 0, 22)
+        self.entry_end_date = self.create_label_entry('End Date (DD/MM/YYYY): ', 0, 23)
+        self.entry_project_leader = self.create_label_entry('Project Leader: ', 0, 24)
+        self.entry_organisation = self.create_label_entry('Organisation: ', 0, 25)
+        
+        self.bt_submit =self.create_button('Submit', 0,30,self.submit_project_info,'page_content')
+        self.upload_button =self.create_button('Upload Excel', 1,30,lambda: self.upload_excel('projects'),'page_content')
+
+    def page2(self):
+        self.title.config(text='Researcher Information')        
+        
+        self.app_text_2 = self.create_text('Fill in the fields to include the information or provide a file. The file must have 4 columns in the same order as the form.', 0, 5)      
+
+        self.entry_project_id = self.create_label_entry('Project ID: ', 0, 20)
+        self.entry_name = self.create_label_entry('Name: ', 0, 21)
+        self.entry_organisation = self.create_label_entry('Organisation: ', 0, 22)
+        self.entry_project_role = self.create_label_entry('Project Role: ', 0, 23)
+
+        self.bt_submit =self.create_button('Submit', 0,30,self.submit_researcher_info,'page_content')
+        self.upload_button =self.create_button('Upload Excel', 1,30,lambda: self.upload_excel('researchers'),'page_content')
+
+    def page3(self):
+        self.title.config(text='Project Co-Contributer')        
+        
+        self.app_text_2 = self.create_text('Fill in the fields to include the information or provide a file. The file must have 4 columns in the same order as the form.', 0, 5)    
+
+        self.entry_project_id = self.create_label_entry('Project ID: ', 0, 20)
+        self.entry_name = self.create_label_entry('Name: ', 0, 21)
+        self.entry_organisation = self.create_label_entry('Organisation: ', 0, 22)
+        self.entry_contribution = self.create_label_entry('Contribution: ', 0, 23)
+
+        self.bt_submit =self.create_button('Submit', 0,30,self.submit_co_contributor_info,'page_content')
+        self.upload_button =self.create_button('Upload Excel', 1,30,lambda: self.upload_excel('co_contributors'),'page_content')
+
+    def page4(self):
+        self.title.config(text='Project User')        
+        
+        self.app_text_2 = self.create_text('Fill in the fields to include the information or provide a file. The file must have 5 columns in the same order as the form.', 0, 5)     
+
+        self.entry_project_id = self.create_label_entry('Project ID: ', 0, 20)
+        self.entry_type = self.create_label_entry('Type: ', 0, 21)
+        self.entry_organisation = self.create_label_entry('Organisation: ', 0, 22)
+        self.entry_name = self.create_label_entry('Name: ', 0, 23)
+        self.entry_email = self.create_label_entry('Email: ', 0, 24)
+
+        self.bt_submit =self.create_button('Submit', 0,30,self.submit_research_user_info,'page_content')
+        self.upload_button =self.create_button('Upload Excel', 1,30,lambda: self.upload_excel('research_users'),'page_content')
+
+    def page5(self):
+        self.title.config(text='Search')
+
+        self.entry_project_id = self.create_label_entry('Project ID: ', 0, 0)
+        self.dropdown_table = self.create_dropdown('Select table',['projects', 'researchers', 'co_contributors', 'research_users'], 0, 1)
+
+        self.bt_search = self.create_button('Search', 0,2,self.search_data,'page_content')
+        self.export_button = self.create_button('Export to Excel', 1,2,self.export_to_excel,'page_content')
+        self.export_button.config(state=tk.DISABLED)
+
+        self.output_text = tk.Text(self.page_content, height=10, width=100)
+        self.output_text.grid(row=3, column=0, columnspan=3, padx=5, pady=10)
 
 if __name__ == "__main__":
     root = tk.Tk()
     #root.geometry("800x600")
     app = MyApp(root)
     app.mainloop()
-
