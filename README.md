@@ -18,6 +18,7 @@ This project was developed as an experimental venture to explore the integration
 
 - **Search by Other Fields**: Implement functionality to search by different fields beyond the project ID.
 - **Improved Layout**: Update the interface layout to make it more intuitive and visually appealing.
+- **Modularization**: Refactor the application to be structured in multiple files for better organization and maintainability. This includes separating the GUI, database interactions, and data processing into distinct modules or files.
 
 ### Dependencies
 
