@@ -83,8 +83,7 @@ class MyApp(tk.Frame):
             self.message_label.destroy()
         self.message_label = tk.Label(self.page_content, text=message, background=self.colourBackWhite, foreground=color, font=('Ariel', 12))
         self.message_label.grid(row=0, column=0, columnspan=4, pady=10)
-
-    #Func to change pages
+        
     def change_page(self, button):
         page_map = {
             'Project-Info': 0,
@@ -97,6 +96,12 @@ class MyApp(tk.Frame):
         self.clear_frame(self.page_content)
         self.pages[self.current_page_index]()
         self.update_button_state()
+
+        # Reset scroll position to the top
+        self.canvas.yview_moveto(0)
+
+
+
 
     def update_button_state(self):
         for index, button in self.button_dict.items():
@@ -114,7 +119,7 @@ class MyApp(tk.Frame):
     #Create the header frame and navigation buttons
     def create_header(self):
         self.pager = tk.Frame(self.main_frame, background=self.colourBackGrey)
-        self.pager.grid(column=0, row=0, sticky=tk.NSEW)
+        self.pager.grid(column=0, row=0, sticky=tk.NSEW,columnspan=2)
 
         self.app_title = tk.Label(self.pager, background=self.colourBackGrey, foreground=self.colourGreen2, font=('Ariel', 18), text='Nesp Projects')
         self.app_title.grid(column=0, row=0, sticky=tk.NSEW, padx=30, pady=10)
@@ -140,15 +145,36 @@ class MyApp(tk.Frame):
         self.page_container = tk.Frame(self.main_frame, background=self.colourGreen1, height=2)
         self.page_container.columnconfigure(0, weight=1)
         self.page_container.rowconfigure(0, weight=0)
-        self.page_container.grid(column=0, row=1, sticky=tk.NSEW)
+        self.page_container.grid(column=0, row=1, sticky=tk.NSEW, columnspan=2)
         self.title = tk.Label(self.page_container, foreground=self.colourBackWhite, background=self.colourGreen1, height=2, font=('Ariel', 18))
         self.title.grid(column=0, row=0)
 
+
+
     def create_page_content(self):
-        self.page_content = tk.Frame(self.main_frame, background=self.colourBackWhite)
-        self.page_content.columnconfigure(0, weight=0)
-        self.page_content.rowconfigure(0, weight=0)
-        self.page_content.grid(column=0, row=2, sticky=tk.NSEW, padx=20, pady=30)
+        # Cria um canvas para a área rolável
+        self.canvas = tk.Canvas(self.main_frame, background=self.colourBackWhite)
+        self.scroll_y = tk.Scrollbar(self.main_frame, orient="vertical", command=self.canvas.yview)
+        
+        # Cria um frame que será colocado dentro do canvas
+        self.page_content = tk.Frame(self.canvas, background=self.colourBackWhite)
+        self.page_content.bind("<Configure>", self.on_frame_configure)
+
+        # Adiciona o frame ao canvas
+        self.canvas.create_window((0, 0), window=self.page_content, anchor="nw")
+        self.canvas.configure(yscrollcommand=self.scroll_y.set)
+        
+        # Organiza o canvas e a scrollbar na interface
+        self.canvas.grid(row=2, column=0, sticky="nsew")
+        self.scroll_y.grid(row=2, column=1, sticky="ns")
+
+    def on_frame_configure(self, event):
+        # Update the scrollable region of the canvas to match the size of the content
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        # Update the width of the canvas to match the width of the content frame
+        self.canvas.update_idletasks()
+        self.canvas.config(width=self.page_content.winfo_width())
+
 
     def create_label_entry(self, text, column, row):
         label = tk.Label(self.page_content, text=text, background=self.colourBackWhite, font=('Ariel', 12))
@@ -523,5 +549,6 @@ class MyApp(tk.Frame):
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = MyApp(root)
+    app = MyApp(root)    
+    root.geometry("960x600")
     app.mainloop()
